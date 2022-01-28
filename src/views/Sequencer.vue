@@ -29,17 +29,28 @@
             <li
               v-for="(balance, index) in balances"
               :key="balance.address"
-              class="d-flex"
+              class="d-flex p-2"
               v-bind:class="{ owner: balance.active }"
             >
               <div class="col-6 align-self-center">
                 {{ balance.address }}
               </div>
-              <div
-                class="col-2 align-self-center font-weight-bold"
-                v-bind:class="{ bluetext: balance.blue }"
-              >
-                {{ balance.balance }}
+              <div class="p-2 col-2 font-weight-bold d-flex align-self-center">
+                <div>
+                  {{ balance.balance }}
+                </div>
+                <div
+                  v-show="balance.text"
+                  class="ml-2 align-self-center greentext"
+                >
+                  {{ balance.text }}
+                </div>
+                <div
+                  v-show="balance.error"
+                  class="ml-2 align-self-center redtext"
+                >
+                  {{ balance.error }}
+                </div>
               </div>
               <div class="col-4 align-self-center">
                 <b-input-group>
@@ -125,17 +136,26 @@ export default {
   methods: {
     async transfer(address, qty, idx) {
       this.$toasted.show("Processing...");
+      let oldBalance = this.balances[idx].balance;
+
+      let userIdx = this.balances.findIndex(
+        (b) => b.address == this.userAddress
+      );
+      console.log(this.userAddress);
+      console.log("userIdx", userIdx);
+      let oldBalanceUser = this.balances[userIdx].balance;
 
       const bundled = await this.contract.bundleInteraction({
         function: "transfer",
         target: address,
         qty: parseInt(qty),
       });
-      const newResult = await this.contract.readState();
+      let newResult = await this.contract.readState();
 
       if (newResult) {
         this.$toasted.clear();
         this.$toasted.global.success("Processed!");
+
         this.$toasted.global.close(`Interaction id: ${bundled.originalTxId}`);
       }
       Vue.set(this.balances, idx, {
@@ -143,8 +163,17 @@ export default {
         balance: newResult.state.balances[address],
         blue: true,
       });
-
-      setTimeout(() => (this.balances[idx].blue = false), 2000);
+      Vue.set(this.balances, userIdx, {
+        address: this.userAddress,
+        balance: newResult.state.balances[this.userAddress],
+        blue: true,
+        active: true,
+      });
+      this.balances[userIdx].error = `-${oldBalanceUser -
+        this.balances[userIdx].balance}`;
+      setTimeout(() => (this.balances[userIdx].error = null), 2000);
+      this.balances[idx].text = `+${this.balances[idx].balance - oldBalance}`;
+      setTimeout(() => (this.balances[idx].text = null), 2000);
     },
     async loadBalances() {
       this.state = await this.contract.readState();
@@ -157,6 +186,8 @@ export default {
           balance: value,
           blue: false,
           active: key == this.userAddress,
+          error: false,
+          text: false,
         });
       }
     },
@@ -174,6 +205,8 @@ export default {
           balance: value,
           blue: false,
           active: key == this.userAddress,
+          error: false,
+          text: false,
         });
       }
     },

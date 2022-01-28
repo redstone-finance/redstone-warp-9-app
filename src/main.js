@@ -3,7 +3,6 @@ import App from "./App.vue";
 import VueTimers from "vue-timers";
 import router from "./router";
 import store from "./store";
-import vuetify from "./plugins/vuetify";
 import VueLoaders from "vue-loaders";
 import { ObserveVisibility } from "vue-observe-visibility";
 import "@babel/polyfill";
@@ -65,6 +64,5 @@ Vue.filter("short-address", function(val) {
 new Vue({
   router,
   store,
-  vuetify,
   render: (h) => h(App),
 }).$mount("#app");

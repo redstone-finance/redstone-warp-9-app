@@ -30,7 +30,7 @@
           <li
             v-for="(balance, index) in balances"
             :key="balance.address"
-            class="d-flex"
+            class="d-flex p-2"
             v-bind:class="{ owner: balance.active }"
           >
             <div class="p-2 col-6 align-self-center">
@@ -175,7 +175,6 @@ export default {
         this.$toasted.global.success("Processed!");
         this.$toasted.global.close(`Interaction id: ${testId}`);
       }
-
       this.balances[userIdx].error = `-${oldBalanceUser -
         this.balances[userIdx].balance}`;
       setTimeout(() => (this.balances[userIdx].error = null), 2000);
