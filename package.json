@@ -15,7 +15,6 @@
   "dependencies": {
     "@babel/polyfill": "^7.4.4",
     "ar-gql": "^0.0.6",
-    "arlocal": "1.1.13",
     "arweave": "^1.10.16",
     "bootstrap": "^4.5.3",
     "bootstrap-vue": "2.21.2",

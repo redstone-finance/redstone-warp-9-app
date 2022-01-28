@@ -2,7 +2,6 @@ const fs = require("fs");
 const path = require("path");
 const Arweave = require("arweave");
 const { SmartWeaveNodeFactory, LoggerFactory } = require("redstone-smartweave");
-const { default: ArLocal } = require("arlocal");
 
 (async () => {
   // Set up Arweave client
