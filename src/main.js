@@ -27,10 +27,11 @@ Vue.use(VueLoaders);
 
 Vue.toasted.register(
   "close",
-  function(message) {
+  function (message) {
     return message;
   },
   {
+    type: "success",
     closeOnSwipe: false,
     className: ["toasting"],
     action: {
@@ -44,16 +45,17 @@ Vue.toasted.register(
 
 Vue.toasted.register(
   "success",
-  function(message) {
+  function (message) {
     return message;
   },
   {
+    type: "success",
     className: ["toasting"],
     duration: 2000,
   }
 );
 
-Vue.filter("short-address", function(val) {
+Vue.filter("short-address", function (val) {
   if (val) {
     return val.slice(0, 5) + "..." + val.slice(-5);
   } else {

@@ -3,7 +3,7 @@
     <main>
       <div id="nav">
         <router-link to="/">Production</router-link> |
-        <router-link to="/test">Redstone Testnet</router-link>
+        <router-link to="/testnet">Redstone Testnet</router-link>
       </div>
       <router-view />
     </main>
@@ -51,5 +51,9 @@ main {
 
 a {
   color: #5982f1;
+}
+
+ul {
+  padding-inline-start: 20px;
 }
 </style>

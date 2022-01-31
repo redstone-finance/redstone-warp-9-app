@@ -1,9 +1,12 @@
 <template>
   <div class="sequencer">
+    <b-modal id="modal-1" title="No wallet detected" size="lg">
+      To use this app you need to have your wallet installed. Check out
+      <a href="https://www.arconnect.io/" target="_blank">ArConnect</a>. You can
+      also use <a href="/#/testnet">Redstone Testnet version.</a>
+    </b-modal>
     <div>
-      <h1 class="text-center">
-        Contract
-      </h1>
+      <h1 class="text-center">Contract</h1>
       <div class="text-center mb-4">
         <a
           target="_blank"
@@ -18,21 +21,27 @@
         <b-button class="ml-3" variant="outline-primary" @click="mint"
           >Mint</b-button
         >
+        <img
+          v-b-tooltip.hover
+          title="In order to perform correct transfer address need to own any tokens. You can mint up to 10000000 warps."
+          src="../assets/question-tooltip.svg"
+          class="tooltip-icon"
+        />
       </div>
       <b-tabs content-class="mt-3" class="contract-tabs" :lazy="true">
         <b-tab title="Transfer" active>
           <ul>
-            <div class="d-flex">
+            <div class="d-flex border-bottom mb-3">
               <div class="p-2 col-6 font-weight-bold bluetext">Address</div>
               <div class="p-2 col-2 font-weight-bold bluetext">Balance</div>
             </div>
             <li
               v-for="(balance, index) in balances"
               :key="balance.address"
-              class="d-flex p-2"
+              class="d-flex py-2"
               v-bind:class="{ owner: balance.active }"
             >
-              <div class="col-6 align-self-center">
+              <div class="p-2 col-6 align-self-center">
                 {{ balance.address }}
               </div>
               <div class="p-2 col-2 font-weight-bold d-flex align-self-center">
@@ -67,7 +76,7 @@
             </li>
           </ul>
         </b-tab>
-        <b-tab title="State">
+        <b-tab title="State" lazy>
           <div class="row d-flex justify-content-center">
             <json-viewer
               class="col-8"
@@ -107,6 +116,9 @@ export default {
   },
   components: { JsonViewer },
   async mounted() {
+    setTimeout(async () => {
+      await this.connectToArconnect();
+    }, 1000);
     this.arweave = Arweave.init({
       host: "arweave.net",
       port: 443,
@@ -134,15 +146,26 @@ export default {
     await this.loadBalances();
   },
   methods: {
+    async connectToArconnect() {
+      if (!window.arweaveWallet) {
+        this.$bvModal.show("modal-1");
+        return;
+      }
+    },
     async transfer(address, qty, idx) {
-      this.$toasted.show("Processing...");
-      let oldBalance = this.balances[idx].balance;
-
       let userIdx = this.balances.findIndex(
         (b) => b.address == this.userAddress
       );
-      console.log(this.userAddress);
-      console.log("userIdx", userIdx);
+      if (!this.balances[userIdx]) {
+        this.$toasted.error(
+          "Your balance is not enough to transfer tokens. Please mint some warps first.",
+          { duration: 2000 }
+        );
+        return;
+      }
+      this.$toasted.show("Processing...");
+      let oldBalance = this.balances[idx].balance;
+
       let oldBalanceUser = this.balances[userIdx].balance;
 
       const bundled = await this.contract.bundleInteraction({
@@ -151,27 +174,33 @@ export default {
         qty: parseInt(qty),
       });
       let newResult = await this.contract.readState();
-
+      this.state = newResult;
       if (newResult) {
         this.$toasted.clear();
         this.$toasted.global.success("Processed!");
-
-        this.$toasted.global.close(`Interaction id: ${bundled.originalTxId}`);
+        this.$toasted.global.close(
+          `<div>Interaction id: <a href="https://scanner.redstone.tools/#/app/interaction/${bundled.originalTxId}" target="_blank">${bundled.originalTxId}</a></div>`
+        );
       }
       Vue.set(this.balances, idx, {
         address: address,
         balance: newResult.state.balances[address],
-        blue: true,
+        text: null,
+        error: null,
       });
       Vue.set(this.balances, userIdx, {
         address: this.userAddress,
         balance: newResult.state.balances[this.userAddress],
-        blue: true,
         active: true,
+        text: null,
+        error: null,
       });
-      this.balances[userIdx].error = `-${oldBalanceUser -
-        this.balances[userIdx].balance}`;
-      setTimeout(() => (this.balances[userIdx].error = null), 2000);
+      this.balances[userIdx].error = `-${
+        oldBalanceUser - this.balances[userIdx].balance
+      }`;
+      setTimeout(() => {
+        this.balances[userIdx].error = null;
+      }, 2000);
       this.balances[idx].text = `+${this.balances[idx].balance - oldBalance}`;
       setTimeout(() => (this.balances[idx].text = null), 2000);
     },
@@ -184,7 +213,6 @@ export default {
         this.balances.push({
           address: key,
           balance: value,
-          blue: false,
           active: key == this.userAddress,
           error: false,
           text: false,
@@ -388,5 +416,15 @@ p {
 
 .owner {
   background-color: #e8f4f8;
+}
+
+.tooltip-icon {
+  width: 25px;
+  height: 25px;
+  transform: scale(0.6);
+  margin-top: -2px;
+  filter: invert(66%) sepia(0%) saturate(275%) hue-rotate(191deg)
+    brightness(95%) contrast(97%);
+  align-self: center;
 }
 </style>

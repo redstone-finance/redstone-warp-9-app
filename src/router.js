@@ -13,7 +13,7 @@ export default new Router({
       component: Sequencer,
     },
     {
-      path: "/test",
+      path: "/testnet",
       name: "sequencerTest",
       component: SequencerTest,
     },
