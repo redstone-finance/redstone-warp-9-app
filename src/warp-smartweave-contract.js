@@ -49,10 +49,6 @@ const smartweave = SmartWeaveWebFactory.memCachedBased(arweave)
 // Interacting with the contract
 const contract = smartweave
   .contract(deployedContracts.warp)
-  .connect("use_wallet")
-  .setEvaluationOptions({
-    waitForConfirmation: true,
-    updateCacheForEachInteraction: false,
-  });
+  .connect("use_wallet");
 
 export default contract;
