@@ -212,37 +212,50 @@ export default {
       const userAddress = await this.arweave.wallets.jwkToAddress("use_wallet");
       this.userAddress = userAddress;
 
-      for (const [key, value] of Object.entries(this.state.state.balances)) {
-        this.balances.push({
-          address: key,
-          balance: value,
-          active: key == this.userAddress,
+      // for (const [key, value] of Object.entries(this.state.state.balances)) {
+      //   this.balances.push({
+      //     address: key,
+      //     balance: value,
+      //     active: key == this.userAddress,
+      //     error: false,
+      //     text: false,
+      //   });
+      // }
+
+      const arr = Object.keys(this.state.state.balances).map((key) => [
+        key,
+        this.state.state.balances[key],
+      ]);
+      arr.reverse().forEach((b, index) => {
+        Vue.set(this.balances, index, {
+          address: b[0],
+          balance: b[1],
           error: false,
           text: false,
+          active: b[0] == this.userAddress,
         });
-      }
-
+      });
       this.loaded = true;
     },
     async mint() {
-      await this.contract.connect("use_wallet");
-      bundleInteraction({
+      await this.contract.connect("use_wallet").bundleInteraction({
         function: "mint",
       });
 
       const newResult = await this.contract.readState();
-      for (const [index, [key, value]] of Object.entries(
-        Object.entries(newResult.state.balances.reverse())
-      )) {
+      const arr = Object.keys(newResult.state.balances).map((key) => [
+        key,
+        newResult.state.balances[key],
+      ]);
+      arr.reverse().forEach((b, index) => {
         Vue.set(this.balances, index, {
-          address: key,
-          balance: value,
-          blue: false,
-          active: key == this.userAddress,
+          address: b[0],
+          balance: b[1],
           error: false,
           text: false,
+          active: b[0] == this.userAddress,
         });
-      }
+      });
     },
   },
 };
