@@ -35,6 +35,9 @@
               <div class="p-2 col-6 font-weight-bold bluetext">Address</div>
               <div class="p-2 col-2 font-weight-bold bluetext">Balance</div>
             </div>
+            <div v-show="!loaded" class="loader">
+              <pacman-loader :loading="!loaded" :color="color"></pacman-loader>
+            </div>
             <li
               v-for="(balance, index) in balances"
               :key="balance.address"
@@ -102,6 +105,7 @@ import {
 import JsonViewer from "vue-json-viewer";
 import deployedContracts from "../deployed-contracts.json";
 import Vue from "vue";
+import PacmanLoader from "vue-spinner/src/PacmanLoader.vue";
 
 export default {
   data() {
@@ -112,9 +116,11 @@ export default {
       state: null,
       contractId: deployedContracts.warp,
       userAddress: null,
+      loaded: false,
+      color: "#5982f1",
     };
   },
-  components: { JsonViewer },
+  components: { JsonViewer, PacmanLoader },
   async mounted() {
     setTimeout(async () => {
       await this.connectToArconnect();
@@ -139,20 +145,18 @@ export default {
       )
       .build();
 
-    this.contract = smartweave
-      .contract(deployedContracts.warp)
-      .connect("use_wallet")
-      .setEvaluationOptions({
-        waitForConfirmation: true,
-        updateCacheForEachInteraction: false,
-      });
+    this.contract = smartweave.contract(deployedContracts.warp);
+    // .connect("use_wallet")
+    // .setEvaluationOptions({
+    //   waitForConfirmation: true,
+    //   updateCacheForEachInteraction: false,
+    // });
 
     await this.loadBalances();
   },
   methods: {
     async connectToArconnect() {
       if (!window.arweaveWallet) {
-        console.log("test");
         this.$bvModal.show("modal-1");
         return;
       }
@@ -173,11 +177,13 @@ export default {
 
       let oldBalanceUser = this.balances[userIdx].balance;
 
-      const bundled = await this.contract.bundleInteraction({
-        function: "transfer",
-        target: address,
-        qty: parseInt(qty),
-      });
+      const bundled = await this.contract
+        .connect("use_wallet")
+        .bundleInteraction({
+          function: "transfer",
+          target: address,
+          qty: parseInt(qty),
+        });
       let newResult = await this.contract.readState();
       this.state = newResult;
       if (newResult) {
@@ -223,6 +229,8 @@ export default {
           text: false,
         });
       }
+
+      this.loaded = true;
     },
     async mint() {
       await this.contract.bundleInteraction({
@@ -277,6 +285,7 @@ export default {
   padding: 10px;
   margin: 0 auto;
   max-width: 70%;
+  margin-top: 50px;
 }
 
 .nav-tabs {
@@ -431,5 +440,61 @@ p {
   filter: invert(66%) sepia(0%) saturate(275%) hue-rotate(191deg)
     brightness(95%) contrast(97%);
   align-self: center;
+}
+.toasting {
+  background-color: #5982f1;
+}
+
+.btn-outline-primary {
+  border-color: #5982f1 !important;
+  color: #5982f1 !important;
+
+  &:hover {
+    color: #fff !important;
+    background-color: #5982f1 !important;
+    border-color: #5982f1 !important;
+  }
+}
+
+.toasted.toasted-primary {
+  a {
+    color: white;
+  }
+  .action.ripple {
+    color: white !important;
+  }
+}
+
+.toasted.toasted-primary.default {
+  transform: translateY(-60px) !important;
+  background-color: #e8f4f8;
+  color: black;
+  font-weight: 500;
+
+  &.toasting {
+    background-color: #5dbb63;
+    color: white;
+    .action.ripple {
+      color: white !important;
+    }
+  }
+  .action.ripple {
+    color: white !important;
+  }
+}
+
+.greentext {
+  color: #5dbb63;
+}
+
+.redtext {
+  color: red;
+}
+
+.loader {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 30vh;
 }
 </style>

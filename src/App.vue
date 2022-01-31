@@ -1,10 +1,6 @@
 <template>
   <div id="app">
     <main>
-      <div id="nav">
-        <router-link to="/">Production</router-link> |
-        <router-link to="/testnet">Redstone Testnet</router-link>
-      </div>
       <router-view />
     </main>
 
@@ -13,16 +9,8 @@
 </template>
 
 <script>
-import { mapActions } from "vuex";
-
 export default {
   name: "App",
-  beforeMount() {
-    this.loadState();
-  },
-  methods: {
-    ...mapActions(["loadState"]),
-  },
 };
 </script>
 

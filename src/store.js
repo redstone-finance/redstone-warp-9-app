@@ -12,15 +12,15 @@ export default new Vuex.Store({
     arweaveTest,
     state: {},
   },
-  mutations: {
-    setState(state, swState) {
-      state.state = swState;
-    },
-  },
-  actions: {
-    async loadState({ commit }) {
-      const state = await contract.readState();
-      commit("setState", state);
-    },
-  },
+  // mutations: {
+  //   setState(state, swState) {
+  //     state.state = swState;
+  //   },
+  // },
+  // actions: {
+  //   async loadState({ commit }) {
+  //     const state = await contract.readState();
+  //     commit("setState", state);
+  //   },
+  // },
 });
