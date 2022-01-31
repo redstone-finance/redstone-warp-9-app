@@ -135,13 +135,6 @@ export default {
           "https://gateway.redstone.finance"
         )
       )
-      .setDefinitionLoader(
-        new RedstoneGatewayContractDefinitionLoader(
-          "https://gateway.redstone.finance",
-          this.arweave,
-          new MemCache()
-        )
-      )
       .build();
 
     this.contract = smartweave.contract(deployedContracts.warp);
@@ -232,7 +225,8 @@ export default {
       this.loaded = true;
     },
     async mint() {
-      await this.contract.bundleInteraction({
+      await this.contract.connect("use_wallet");
+      bundleInteraction({
         function: "mint",
       });
 
