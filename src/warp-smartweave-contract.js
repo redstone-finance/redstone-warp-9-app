@@ -16,7 +16,7 @@ import deployedContracts from "./deployed-contracts.json";
 
 // Set up Arweave client
 export const arweave = Arweave.init({
-  host: "dh48zl0solow5.cloudfront.net",
+  host: "arweave.net",
   port: 443,
   protocol: "https",
 });
@@ -47,6 +47,12 @@ const smartweave = SmartWeaveWebFactory.memCachedBased(arweave)
   .build();
 
 // Interacting with the contract
-const contract = smartweave.contract(deployedContracts.warp);
+const contract = smartweave
+  .contract(deployedContracts.warp)
+  .connect("use_wallet")
+  .setEvaluationOptions({
+    waitForConfirmation: true,
+    updateCacheForEachInteraction: false,
+  });
 
 export default contract;
