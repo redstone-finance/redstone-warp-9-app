@@ -2,8 +2,7 @@
   <div class="sequencer">
     <b-modal id="modal-1" title="No wallet detected" size="lg">
       To use this app you need to have your wallet installed. Check out
-      <a href="https://www.arconnect.io/" target="_blank">ArConnect</a>. You can
-      also use <a href="/#/testnet">Redstone Testnet version.</a>
+      <a href="https://www.arconnect.io/" target="_blank">ArConnect.</a>
     </b-modal>
     <div>
       <h1 class="text-center">Contract</h1>
