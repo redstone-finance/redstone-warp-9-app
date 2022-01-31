@@ -141,13 +141,18 @@ export default {
 
     this.contract = smartweave
       .contract(deployedContracts.warp)
-      .connect("use_wallet");
+      .connect("use_wallet")
+      .setEvaluationOptions({
+        waitForConfirmation: true,
+        updateCacheForEachInteraction: false,
+      });
 
     await this.loadBalances();
   },
   methods: {
     async connectToArconnect() {
       if (!window.arweaveWallet) {
+        console.log("test");
         this.$bvModal.show("modal-1");
         return;
       }
