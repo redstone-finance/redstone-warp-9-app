@@ -97,8 +97,6 @@ import Arweave from "arweave";
 import {
   SmartWeaveWebFactory,
   RedstoneGatewayInteractionsLoader,
-  RedstoneGatewayContractDefinitionLoader,
-  MemCache,
 } from "redstone-smartweave";
 
 import JsonViewer from "vue-json-viewer";
@@ -117,6 +115,7 @@ export default {
       userAddress: null,
       loaded: false,
       color: "#5982f1",
+      smartweave: null,
     };
   },
   components: { JsonViewer, PacmanLoader },
@@ -129,7 +128,7 @@ export default {
       port: 443,
       protocol: "https",
     });
-    const smartweave = SmartWeaveWebFactory.memCachedBased(this.arweave)
+    this.smartweave = SmartWeaveWebFactory.memCachedBased(this.arweave)
       .setInteractionsLoader(
         new RedstoneGatewayInteractionsLoader(
           "https://gateway.redstone.finance"
@@ -137,14 +136,11 @@ export default {
       )
       .build();
 
-    this.contract = smartweave.contract(deployedContracts.warp);
     // .connect("use_wallet")
     // .setEvaluationOptions({
     //   waitForConfirmation: true,
     //   updateCacheForEachInteraction: false,
     // });
-
-    await this.loadBalances();
   },
   methods: {
     async connectToArconnect() {
@@ -152,6 +148,14 @@ export default {
         this.$bvModal.show("modal-1");
         return;
       }
+      await window.arweaveWallet.connect([
+        "ACCESS_ADDRESS",
+        "ACCESS_ALL_ADDRESSES",
+        "SIGN_TRANSACTION",
+        "ACCESS_PUBLIC_KEY",
+      ]);
+      this.contract = await this.smartweave.contract(deployedContracts.warp);
+      await this.loadBalances();
     },
     async transfer(address, qty, idx) {
       let userIdx = this.balances.findIndex(
@@ -168,7 +172,8 @@ export default {
       let oldBalance = this.balances[idx].balance;
 
       let oldBalanceUser = this.balances[userIdx].balance;
-
+      this.address = await window.arweaveWallet.getActivePublicKey();
+      console.log(this.address);
       const bundled = await this.contract
         .connect("use_wallet")
         .bundleInteraction({
@@ -209,7 +214,7 @@ export default {
     },
     async loadBalances() {
       this.state = await this.contract.readState();
-      const userAddress = await this.arweave.wallets.jwkToAddress("use_wallet");
+      const userAddress = await this.arweave.wallets.jwkToAddress();
       this.userAddress = userAddress;
 
       // for (const [key, value] of Object.entries(this.state.state.balances)) {
@@ -238,6 +243,8 @@ export default {
       this.loaded = true;
     },
     async mint() {
+      this.address = await window.arweaveWallet.getActivePublicKey();
+      console.log(this.address);
       await this.contract.connect("use_wallet").bundleInteraction({
         function: "mint",
       });
