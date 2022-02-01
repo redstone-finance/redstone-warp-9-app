@@ -13,7 +13,6 @@ const { SmartWeaveNodeFactory, LoggerFactory } = require("redstone-smartweave");
   const wallet = await arweave.wallets.generate();
   const walletAddress = await arweave.wallets.getAddress(wallet);
   await arweave.api.get(`/mint/${walletAddress}/1000000000000000`);
-  // const walletAddress = await arweave.wallets.jwkToAddress(wallet);
 
   const stateFromFile = JSON.parse(
     fs.readFileSync(

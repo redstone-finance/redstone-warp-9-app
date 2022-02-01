@@ -1,6 +1,12 @@
 <template>
-  <div class="sequencer">
-    <b-modal id="modal-1" title="No wallet detected" size="lg">
+  <div class="col-12 col-xl-9 sequencer" :key="userAddress">
+    <b-modal
+      id="modal-1"
+      title="No wallet detected"
+      size="lg"
+      hide-footer
+      hide-header-close
+    >
       To use this app you need to have your wallet installed. Check out
       <a href="https://www.arconnect.io/" target="_blank">ArConnect.</a>
     </b-modal>
@@ -10,28 +16,47 @@
         <a
           target="_blank"
           :href="`https://scanner.redstone.tools/#/app/contract/${contractId}`"
+          class="d-none d-sm-block"
           >{{ contractId }}</a
         >
-      </div>
-      <div class="d-flex justify-content-center col-12 mb-3">
-        <div class="align-self-center">
-          Your address: <span class="font-weight-bold">{{ userAddress }}</span>
-        </div>
-        <b-button class="ml-3" variant="outline-primary" @click="mint"
-          >Mint</b-button
+        <a
+          target="_blank"
+          :href="`https://scanner.redstone.tools/#/app/contract/${contractId}`"
+          class="d-sm-none d-block"
+          >{{ contractId | tx }}</a
         >
-        <img
-          v-b-tooltip.hover
-          title="In order to perform correct transfer address need to own any tokens. You can mint up to 10000000 warps."
-          src="../assets/question-tooltip.svg"
-          class="tooltip-icon"
-        />
+      </div>
+      <div
+        class="d-flex flex-column flex-md-row justify-content-center col-12 mb-3"
+      >
+        <div class="d-md-flex align-self-center">
+          Your address:
+          <span class="font-weight-bold d-md-block d-none">{{
+            userAddress
+          }}</span>
+          <span class="font-weight-bold d-block d-md-none">{{
+            userAddress | tx
+          }}</span>
+        </div>
+        <div class="d-flex align-self-center pt-3 pt-md-0">
+          <b-button class="ml-3" variant="outline-primary" @click="mint"
+            >Mint</b-button
+          >
+          <img
+            v-b-tooltip.hover
+            title="In order to perform correct transfer address need to own any tokens. You can mint up to 10000000 warps."
+            src="../assets/question-tooltip.svg"
+            class="tooltip-icon"
+          />
+        </div>
       </div>
       <b-tabs content-class="mt-3" class="contract-tabs" :lazy="true">
         <b-tab title="Transfer" active>
           <ul>
             <div class="d-flex border-bottom mb-3">
-              <div class="p-2 col-6 font-weight-bold bluetext">Address</div>
+              <div class="p-2 col-6 font-weight-bold bluetext">
+                Recipient Address
+              </div>
               <div class="p-2 col-2 font-weight-bold bluetext">Balance</div>
             </div>
             <div v-show="!loaded" class="loader">
@@ -40,11 +65,14 @@
             <li
               v-for="(balance, index) in balances"
               :key="balance.address"
-              class="d-flex py-2"
+              class="d-flex flex-wrap flex-md-nowrap py-2"
               v-bind:class="{ owner: balance.active }"
             >
               <div class="p-2 col-6 align-self-center">
-                {{ balance.address }}
+                <span class="d-md-block d-none">{{ balance.address }}</span>
+                <span class="d-block d-md-none">{{
+                  balance.address | tx
+                }}</span>
               </div>
               <div class="p-2 col-2 font-weight-bold d-flex align-self-center">
                 <div>
@@ -63,9 +91,14 @@
                   {{ balance.error }}
                 </div>
               </div>
-              <div class="col-4 align-self-center">
+              <div class="p-2 p-md-0 align-self-center">
                 <b-input-group>
-                  <b-form-input v-model="balance.value"></b-form-input>
+                  <b-form-input
+                    v-model="balance.value"
+                    :disabled="balance.address == userAddress"
+                    type="number"
+                    min="1"
+                  ></b-form-input>
                   <b-input-group-append>
                     <b-button
                       class="ml-2 blue"
@@ -135,12 +168,6 @@ export default {
         )
       )
       .build();
-
-    // .connect("use_wallet")
-    // .setEvaluationOptions({
-    //   waitForConfirmation: true,
-    //   updateCacheForEachInteraction: false,
-    // });
   },
   methods: {
     async connectToArconnect() {
@@ -152,9 +179,13 @@ export default {
         "ACCESS_ADDRESS",
         "ACCESS_ALL_ADDRESSES",
         "SIGN_TRANSACTION",
-        "ACCESS_PUBLIC_KEY",
       ]);
-      this.contract = await this.smartweave.contract(deployedContracts.warp);
+      this.contract = await this.smartweave
+        .contract(deployedContracts.warp)
+        .connect("use_wallet");
+      window.addEventListener("walletSwitch", async () => {
+        await this.loadBalances();
+      });
       await this.loadBalances();
     },
     async transfer(address, qty, idx) {
@@ -172,8 +203,6 @@ export default {
       let oldBalance = this.balances[idx].balance;
 
       let oldBalanceUser = this.balances[userIdx].balance;
-      this.address = await window.arweaveWallet.getActivePublicKey();
-      console.log(this.address);
       const bundled = await this.contract
         .connect("use_wallet")
         .bundleInteraction({
@@ -217,21 +246,15 @@ export default {
       const userAddress = await this.arweave.wallets.jwkToAddress();
       this.userAddress = userAddress;
 
-      // for (const [key, value] of Object.entries(this.state.state.balances)) {
-      //   this.balances.push({
-      //     address: key,
-      //     balance: value,
-      //     active: key == this.userAddress,
-      //     error: false,
-      //     text: false,
-      //   });
-      // }
-
       const arr = Object.keys(this.state.state.balances).map((key) => [
         key,
         this.state.state.balances[key],
       ]);
-      arr.reverse().forEach((b, index) => {
+      const find = arr.find((a) => a[0] == this.userAddress);
+      const user = arr.indexOf(find);
+      arr.splice(user, 1);
+      arr.unshift(find);
+      arr.forEach((b, index) => {
         Vue.set(this.balances, index, {
           address: b[0],
           balance: b[1],
@@ -243,8 +266,6 @@ export default {
       this.loaded = true;
     },
     async mint() {
-      this.address = await window.arweaveWallet.getActivePublicKey();
-      console.log(this.address);
       await this.contract.connect("use_wallet").bundleInteraction({
         function: "mint",
       });
@@ -254,7 +275,11 @@ export default {
         key,
         newResult.state.balances[key],
       ]);
-      arr.reverse().forEach((b, index) => {
+      const find = arr.find((a) => a[0] == this.userAddress);
+      const user = arr.indexOf(find);
+      arr.splice(user, 1);
+      arr.unshift(find);
+      arr.forEach((b, index) => {
         Vue.set(this.balances, index, {
           address: b[0],
           balance: b[1],
@@ -297,7 +322,6 @@ export default {
 .sequencer {
   padding: 10px;
   margin: 0 auto;
-  max-width: 70%;
   margin-top: 50px;
 }
 
@@ -470,6 +494,7 @@ p {
 }
 
 .toasted.toasted-primary {
+  transform: translateY(-55px) !important;
   a {
     color: white;
   }
