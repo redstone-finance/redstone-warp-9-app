@@ -252,16 +252,19 @@ export default {
         this.state.state.balances[key],
       ]);
       const find = arr.find((a) => a[0] == this.userAddress);
-      const user = arr.indexOf(find);
-      arr.splice(user, 1);
-      arr.unshift(find);
+      if (find) {
+        const user = arr.indexOf(find);
+        arr.splice(user, 1);
+        arr.unshift(find);
+      }
+
       arr.forEach((b, index) => {
         Vue.set(this.balances, index, {
           address: b[0],
           balance: b[1],
           error: false,
           text: false,
-          active: b[0] == this.userAddress,
+          active: find ? b[0] == this.userAddress : null,
         });
       });
       this.loaded = true;
