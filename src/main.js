@@ -39,7 +39,7 @@ Vue.toasted.register(
   {
     type: "success",
     className: ["toasting"],
-    duration: 2000,
+    duration: 3000,
   }
 );
 

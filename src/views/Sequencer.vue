@@ -196,7 +196,7 @@ export default {
       if (!this.balances[userIdx]) {
         this.$toasted.error(
           "Your balance is not enough to transfer tokens. Please mint some warps first.",
-          { duration: 2000 }
+          { duration: 3000 }
         );
         return;
       }
