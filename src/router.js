@@ -5,7 +5,7 @@ import Home from "./views/Home.vue";
 
 Vue.use(Router);
 
-export default new Router({
+const router = new Router({
   routes: [
     {
       path: "/transfer",
@@ -19,3 +19,5 @@ export default new Router({
     },
   ],
 });
+
+export default router;

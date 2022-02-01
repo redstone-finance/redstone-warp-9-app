@@ -1,18 +1,26 @@
 <template>
-  <div class="enterprise">
+  <div class="enterprise flex-column flex-md-row">
     <b-modal
       id="modal-1"
       title="No wallet detected"
       size="lg"
       hide-footer
       hide-header-close
+      no-close-on-backdrop
     >
       To use this app you need to have your wallet installed. Check out
       <a href="https://www.arconnect.io/" target="_blank">ArConnect.</a>
     </b-modal>
-    <img class="enterprise-img" src="../assets/enterprise.png" />
+    <img
+      class="enterprise-img d-none d-md-block"
+      src="../assets/enterprise.png"
+    />
 
     <router-link to="transfer">Enter the Enterprise</router-link>
+    <img
+      class="enterprise-img d-block d-md-none pt-3 pt-md-0"
+      src="../assets/enterprise.png"
+    />
   </div>
 </template>
 
@@ -21,7 +29,7 @@ export default {
   async mounted() {
     setTimeout(async () => {
       await this.connectToArconnect();
-    }, 500);
+    }, 1000);
   },
   methods: {
     async connectToArconnect() {

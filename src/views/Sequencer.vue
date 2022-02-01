@@ -6,6 +6,7 @@
       size="lg"
       hide-footer
       hide-header-close
+      no-close-on-backdrop
     >
       To use this app you need to have your wallet installed. Check out
       <a href="https://www.arconnect.io/" target="_blank">ArConnect.</a>
@@ -266,11 +267,21 @@ export default {
       this.loaded = true;
     },
     async mint() {
-      await this.contract.connect("use_wallet").bundleInteraction({
-        function: "mint",
-      });
+      this.$toasted.show("Processing...");
+      const bundled = await this.contract
+        .connect("use_wallet")
+        .bundleInteraction({
+          function: "mint",
+        });
 
       const newResult = await this.contract.readState();
+      if (newResult) {
+        this.$toasted.clear();
+        this.$toasted.global.success("Processed!");
+        this.$toasted.global.close(
+          `<div>Interaction id: <a href="https://scanner.redstone.tools/#/app/interaction/${bundled.originalTxId}" target="_blank">${bundled.originalTxId}</a></div>`
+        );
+      }
       const arr = Object.keys(newResult.state.balances).map((key) => [
         key,
         newResult.state.balances[key],
