@@ -1,13 +1,6 @@
 <template>
   <div class="col-12 col-xl-9 sequencer" :key="userAddress">
-    <b-modal
-      id="modal-1"
-      title="No wallet detected"
-      size="lg"
-      hide-footer
-      hide-header-close
-      no-close-on-backdrop
-    >
+    <b-modal id="modal-1" title="No wallet detected" size="lg" hide-footer hide-header-close no-close-on-backdrop>
       To use this app you need to have your wallet installed. Check out
       <a href="https://www.arconnect.io/" target="_blank">ArConnect.</a>
     </b-modal>
@@ -27,22 +20,14 @@
           >{{ contractId | tx }}</a
         >
       </div>
-      <div
-        class="d-flex flex-column flex-md-row justify-content-center col-12 mb-3"
-      >
+      <div class="d-flex flex-column flex-md-row justify-content-center col-12 mb-3">
         <div class="d-md-flex align-self-center">
           Your address:
-          <span class="font-weight-bold d-md-block d-none">{{
-            userAddress
-          }}</span>
-          <span class="font-weight-bold d-block d-md-none">{{
-            userAddress | tx
-          }}</span>
+          <span class="font-weight-bold d-md-block d-none">{{ userAddress }}</span>
+          <span class="font-weight-bold d-block d-md-none">{{ userAddress | tx }}</span>
         </div>
         <div class="d-flex align-self-center pt-3 pt-md-0">
-          <b-button class="ml-3" variant="outline-primary" @click="mint"
-            >Mint</b-button
-          >
+          <b-button class="ml-3" variant="outline-primary" @click="mint">Mint</b-button>
           <img
             v-b-tooltip.hover
             title="In order to perform correct transfer address need to own any tokens. You can mint up to 10000000 warps."
@@ -55,9 +40,7 @@
         <b-tab title="Transfer" active>
           <ul>
             <div class="d-flex border-bottom mb-3">
-              <div class="p-2 col-6 font-weight-bold bluetext">
-                Recipient Address
-              </div>
+              <div class="p-2 col-6 font-weight-bold bluetext">Recipient Address</div>
               <div class="p-2 col-2 font-weight-bold bluetext">Balance</div>
             </div>
             <div v-show="!loaded" class="loader">
@@ -71,24 +54,16 @@
             >
               <div class="p-2 col-6 align-self-center">
                 <span class="d-md-block d-none">{{ balance.address }}</span>
-                <span class="d-block d-md-none">{{
-                  balance.address | tx
-                }}</span>
+                <span class="d-block d-md-none">{{ balance.address | tx }}</span>
               </div>
               <div class="p-2 col-2 font-weight-bold d-flex align-self-center">
                 <div>
                   {{ balance.balance }}
                 </div>
-                <div
-                  v-show="balance.text"
-                  class="ml-2 align-self-center greentext"
-                >
+                <div v-show="balance.text" class="ml-2 align-self-center greentext">
                   {{ balance.text }}
                 </div>
-                <div
-                  v-show="balance.error"
-                  class="ml-2 align-self-center redtext"
-                >
+                <div v-show="balance.error" class="ml-2 align-self-center redtext">
                   {{ balance.error }}
                 </div>
               </div>
@@ -101,9 +76,7 @@
                     min="1"
                   ></b-form-input>
                   <b-input-group-append>
-                    <b-button
-                      class="ml-2 blue"
-                      @click="transfer(balance.address, balance.value, index)"
+                    <b-button class="ml-2 blue" @click="transfer(balance.address, balance.value, index)"
                       >Transfer</b-button
                     >
                   </b-input-group-append>
@@ -114,12 +87,7 @@
         </b-tab>
         <b-tab title="State" lazy>
           <div class="row d-flex justify-content-center">
-            <json-viewer
-              class="col-8"
-              :value="state"
-              :expand-depth="4"
-              sort
-            ></json-viewer></div
+            <json-viewer class="col-8" :value="state" :expand-depth="4" sort></json-viewer></div
         ></b-tab>
       </b-tabs>
     </div>
@@ -127,16 +95,15 @@
 </template>
 
 <script>
-import Arweave from "arweave";
-import {
-  SmartWeaveWebFactory,
-  RedstoneGatewayInteractionsLoader,
-} from "redstone-smartweave";
+import Arweave from 'arweave';
+import { SmartWeaveWebFactory, RedstoneGatewayInteractionsLoader } from 'redstone-smartweave';
 
-import JsonViewer from "vue-json-viewer";
-import deployedContracts from "../deployed-contracts.json";
-import Vue from "vue";
-import PacmanLoader from "vue-spinner/src/PacmanLoader.vue";
+import JsonViewer from 'vue-json-viewer';
+import deployedContracts from '../deployed-contracts.json';
+import constants from '../constants.json';
+import Vue from 'vue';
+import PacmanLoader from 'vue-spinner/src/PacmanLoader.vue';
+import axios from 'axios';
 
 export default {
   data() {
@@ -148,7 +115,7 @@ export default {
       contractId: deployedContracts.warp,
       userAddress: null,
       loaded: false,
-      color: "#5982f1",
+      color: '#5982f1',
       smartweave: null,
     };
   },
@@ -158,64 +125,50 @@ export default {
       await this.connectToArconnect();
     }, 1000);
     this.arweave = Arweave.init({
-      host: "arweave.net",
+      host: 'arweave.net',
       port: 443,
-      protocol: "https",
+      protocol: 'https',
     });
     this.smartweave = SmartWeaveWebFactory.memCachedBased(this.arweave)
-      .setInteractionsLoader(
-        new RedstoneGatewayInteractionsLoader(
-          "https://gateway.redstone.finance"
-        )
-      )
+      .setInteractionsLoader(new RedstoneGatewayInteractionsLoader('https://gateway.redstone.finance'))
       .build();
   },
   methods: {
     async connectToArconnect() {
       if (!window.arweaveWallet) {
-        this.$bvModal.show("modal-1");
+        this.$bvModal.show('modal-1');
         return;
       }
-      await window.arweaveWallet.connect([
-        "ACCESS_ADDRESS",
-        "ACCESS_ALL_ADDRESSES",
-        "SIGN_TRANSACTION",
-      ]);
-      this.contract = await this.smartweave
-        .contract(deployedContracts.warp)
-        .connect("use_wallet");
-      window.addEventListener("walletSwitch", async () => {
+      await window.arweaveWallet.connect(['ACCESS_ADDRESS', 'ACCESS_ALL_ADDRESSES', 'SIGN_TRANSACTION']);
+      this.contract = await this.smartweave.contract(deployedContracts.warp).connect('use_wallet');
+      window.addEventListener('walletSwitch', async () => {
         await this.loadBalances();
       });
       await this.loadBalances();
     },
     async transfer(address, qty, idx) {
-      let userIdx = this.balances.findIndex(
-        (b) => b.address == this.userAddress
-      );
+      let userIdx = this.balances.findIndex((b) => b.address == this.userAddress);
       if (!this.balances[userIdx]) {
-        this.$toasted.error(
-          "Your balance is not enough to transfer tokens. Please mint some warps first.",
-          { duration: 3000 }
-        );
+        this.$toasted.error('Your balance is not enough to transfer tokens. Please mint some warps first.', {
+          duration: 3000,
+        });
         return;
       }
-      this.$toasted.show("Processing...");
+      this.$toasted.show('Processing...');
       let oldBalance = this.balances[idx].balance;
 
       let oldBalanceUser = this.balances[userIdx].balance;
-      const bundled = await this.contract
-        .connect("use_wallet")
-        .bundleInteraction({
-          function: "transfer",
-          target: address,
-          qty: parseInt(qty),
-        });
-      let newResult = await this.contract.readState();
+      const bundled = await this.contract.connect('use_wallet').bundleInteraction({
+        function: 'transfer',
+        target: address,
+        qty: parseInt(qty),
+      });
+      const { data } = await axios.get(`${constants.den}/state?id=${deployedContracts.warp}`);
+      let newResult = data;
       this.state = newResult;
       if (newResult) {
         this.$toasted.clear();
-        this.$toasted.global.success("Processed!");
+        this.$toasted.global.success('Processed!');
         this.$toasted.global.close(
           `<div>Interaction id: <a href="https://scanner.redstone.tools/#/app/interaction/${bundled.originalTxId}" target="_blank">${bundled.originalTxId}</a></div>`
         );
@@ -233,9 +186,7 @@ export default {
         text: null,
         error: null,
       });
-      this.balances[userIdx].error = `-${
-        oldBalanceUser - this.balances[userIdx].balance
-      }`;
+      this.balances[userIdx].error = `-${oldBalanceUser - this.balances[userIdx].balance}`;
       setTimeout(() => {
         this.balances[userIdx].error = null;
       }, 2000);
@@ -243,14 +194,12 @@ export default {
       setTimeout(() => (this.balances[idx].text = null), 2000);
     },
     async loadBalances() {
-      this.state = await this.contract.readState();
+      const { data } = await axios.get(`${constants.den}/state?id=${deployedContracts.warp}`);
+      this.state = data;
       const userAddress = await this.arweave.wallets.jwkToAddress();
       this.userAddress = userAddress;
 
-      const arr = Object.keys(this.state.state.balances).map((key) => [
-        key,
-        this.state.state.balances[key],
-      ]);
+      const arr = Object.keys(this.state.state.balances).map((key) => [key, this.state.state.balances[key]]);
       const find = arr.find((a) => a[0] == this.userAddress);
       if (find) {
         const user = arr.indexOf(find);
@@ -270,25 +219,20 @@ export default {
       this.loaded = true;
     },
     async mint() {
-      this.$toasted.show("Processing...");
-      const bundled = await this.contract
-        .connect("use_wallet")
-        .bundleInteraction({
-          function: "mint",
-        });
-
-      const newResult = await this.contract.readState();
+      this.$toasted.show('Processing...');
+      const bundled = await this.contract.connect('use_wallet').bundleInteraction({
+        function: 'mint',
+      });
+      const { data } = await axios.get(`${constants.den}/state?id=${deployedContracts.warp}`);
+      const newResult = data;
       if (newResult) {
         this.$toasted.clear();
-        this.$toasted.global.success("Processed!");
+        this.$toasted.global.success('Processed!');
         this.$toasted.global.close(
           `<div>Interaction id: <a href="https://scanner.redstone.tools/#/app/interaction/${bundled.originalTxId}" target="_blank">${bundled.originalTxId}</a></div>`
         );
       }
-      const arr = Object.keys(newResult.state.balances).map((key) => [
-        key,
-        newResult.state.balances[key],
-      ]);
+      const arr = Object.keys(newResult.state.balances).map((key) => [key, newResult.state.balances[key]]);
       const find = arr.find((a) => a[0] == this.userAddress);
       const user = arr.indexOf(find);
       arr.splice(user, 1);
@@ -382,7 +326,7 @@ p {
   -webkit-box-shadow: inset 0px -6px 2px -4px #e8e8e8, 5px -5px 6px -2px #e8e8e8;
   box-shadow: inset 0px -6px 2px -4px #e8e8e8, 5px -5px 6px -2px #e8e8e8;
   &:after {
-    content: " ";
+    content: ' ';
     height: 23px;
     border-right: 1px solid #d9d9d9;
     border-top-width: 0;
@@ -488,8 +432,7 @@ p {
   height: 25px;
   transform: scale(0.6);
   margin-top: -2px;
-  filter: invert(66%) sepia(0%) saturate(275%) hue-rotate(191deg)
-    brightness(95%) contrast(97%);
+  filter: invert(66%) sepia(0%) saturate(275%) hue-rotate(191deg) brightness(95%) contrast(97%);
   align-self: center;
 }
 .toasting {
