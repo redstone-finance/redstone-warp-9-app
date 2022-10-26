@@ -100,8 +100,6 @@
 </template>
 
 <script>
-// import Arweave from 'arweave';
-// import { WarpWebFactory } from 'warp-contracts';
 
 import JsonViewer from 'vue-json-viewer';
 import deployedContracts from '../deployed-contracts.json';
@@ -169,18 +167,6 @@ export default {
 
       await this.loadBalances();
     },
-    // async connectToArconnect() {
-    //   if (!window.arweaveWallet) {
-    //     this.$bvModal.show('modal-1');
-    //     return;
-    //   }
-    //   await window.arweaveWallet.connect(['ACCESS_ADDRESS', 'ACCESS_ALL_ADDRESSES', 'SIGN_TRANSACTION']);
-    //   this.contract = await this.smartweave.contract(deployedContracts.warp).connect('use_wallet');
-    //   window.addEventListener('walletSwitch', async () => {
-    //     await this.loadBalances();
-    //   });
-    //   await this.loadBalances();
-    // },
     async transfer(address, qty, idx) {
       let userIdx = this.balances.findIndex((b) => b.address == this.userAddress);
       if (!this.walletLoaded) {
@@ -365,11 +351,9 @@ p {
 
 .nav-tabs > .nav-item > .nav-link:not(.active) {
   padding: 10px 14px;
-  /* height: 36px; */
   background-color: #fafafa;
   border-top-left-radius: 0;
   border-top-right-radius: 0;
-  /* position: relative; */
   -webkit-box-shadow: inset 0px -6px 2px -4px #e8e8e8, 5px -5px 6px -2px #e8e8e8;
   box-shadow: inset 0px -6px 2px -4px #e8e8e8, 5px -5px 6px -2px #e8e8e8;
   &:after {
