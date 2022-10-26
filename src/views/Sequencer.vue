@@ -1,8 +1,13 @@
 <template>
   <div class="col-12 col-xl-9 sequencer" :key="userAddress">
-    <b-modal id="modal-1" title="No wallet detected" size="lg" hide-footer hide-header-close no-close-on-backdrop>
-      To use this app you need to have your wallet installed. Check out
-      <a href="https://www.arconnect.io/" target="_blank">ArConnect.</a>
+    <b-button class="ml-2" variant="outline-dark" v-b-modal.modal-2>{{
+      walletLoaded ? 'Switch wallet' : 'Connect wallet'
+    }}</b-button>
+    <b-modal id="modal-2" title="Connect wallet">
+      <div class="d-flex justify-content-between">
+        <b-button class="ml-2" variant="outline-dark" @click="connectArweaveWallet">arweave.app</b-button>
+        <b-button class="ml-2" variant="outline-dark" @click="connectEvmWallet">Metamask</b-button>
+      </div>
     </b-modal>
     <div>
       <h1 class="text-center">Contract</h1>
@@ -20,7 +25,7 @@
           >{{ contractId | tx }}</a
         >
       </div>
-      <div class="d-flex flex-column flex-md-row justify-content-center col-12 mb-3">
+      <div v-if="walletLoaded" class="d-flex flex-column flex-md-row justify-content-center col-12 mb-3">
         <div class="d-md-flex align-self-center">
           Your address:
           <span class="font-weight-bold d-md-block d-none">{{ userAddress }}</span>
@@ -95,8 +100,8 @@
 </template>
 
 <script>
-import Arweave from 'arweave';
-import { SmartWeaveWebFactory, RedstoneGatewayInteractionsLoader } from 'redstone-smartweave';
+// import Arweave from 'arweave';
+// import { WarpWebFactory } from 'warp-contracts';
 
 import JsonViewer from 'vue-json-viewer';
 import deployedContracts from '../deployed-contracts.json';
@@ -104,6 +109,11 @@ import constants from '../constants.json';
 import Vue from 'vue';
 import PacmanLoader from 'vue-spinner/src/PacmanLoader.vue';
 import axios from 'axios';
+import { ArweaveWebWallet } from 'arweave-wallet-connector';
+import MetaMaskOnboarding from '@metamask/onboarding';
+import { evmSignature } from 'warp-signature';
+import { WarpFactory } from 'warp-contracts';
+import { utils } from 'ethers';
 
 export default {
   data() {
@@ -116,40 +126,71 @@ export default {
       userAddress: null,
       loaded: false,
       color: '#5982f1',
-      smartweave: null,
+      warp: null,
+      walletLoaded: false,
     };
   },
   components: { JsonViewer, PacmanLoader },
   async mounted() {
-    setTimeout(async () => {
-      await this.connectToArconnect();
-    }, 1000);
-    this.arweave = Arweave.init({
-      host: 'arweave.net',
-      port: 443,
-      protocol: 'https',
-    });
-    this.smartweave = SmartWeaveWebFactory.memCachedBased(this.arweave)
-      .setInteractionsLoader(new RedstoneGatewayInteractionsLoader('https://gateway.redstone.finance'))
-      .build();
+    this.warp = WarpFactory.forMainnet();
+    this.contract = this.warp.contract(this.contractId);
+    await this.loadBalances();
   },
   methods: {
-    async connectToArconnect() {
-      if (!window.arweaveWallet) {
-        this.$bvModal.show('modal-1');
-        return;
-      }
-      await window.arweaveWallet.connect(['ACCESS_ADDRESS', 'ACCESS_ALL_ADDRESSES', 'SIGN_TRANSACTION']);
-      this.contract = await this.smartweave.contract(deployedContracts.warp).connect('use_wallet');
-      window.addEventListener('walletSwitch', async () => {
-        await this.loadBalances();
+    async connectArweaveWallet() {
+      let arweaveWebWallet = new ArweaveWebWallet({
+        name: 'Ardit',
       });
+      await arweaveWebWallet.setUrl('arweave.app');
+      await arweaveWebWallet.connect();
+      this.userAddress = arweaveWebWallet.address;
+      await this.contract.connect('use_wallet');
+      this.$toasted.global.success('Connected!');
+      this.$bvModal.hide('modal-2');
+      this.walletLoaded = true;
       await this.loadBalances();
     },
+    async connectEvmWallet() {
+      if (!MetaMaskOnboarding.isMetaMaskInstalled()) {
+        this.$toasted.error('Metamask not detected.');
+        return;
+      }
+
+      await this.contract.connect({
+        signer: evmSignature,
+        signatureType: 'ethereum',
+      });
+      const accounts = await window.ethereum.request({
+        method: 'eth_requestAccounts',
+      });
+      this.userAddress = utils.getAddress(accounts[0]);
+      this.$toasted.global.success('Connected!');
+      this.walletLoaded = true;
+
+      await this.loadBalances();
+    },
+    // async connectToArconnect() {
+    //   if (!window.arweaveWallet) {
+    //     this.$bvModal.show('modal-1');
+    //     return;
+    //   }
+    //   await window.arweaveWallet.connect(['ACCESS_ADDRESS', 'ACCESS_ALL_ADDRESSES', 'SIGN_TRANSACTION']);
+    //   this.contract = await this.smartweave.contract(deployedContracts.warp).connect('use_wallet');
+    //   window.addEventListener('walletSwitch', async () => {
+    //     await this.loadBalances();
+    //   });
+    //   await this.loadBalances();
+    // },
     async transfer(address, qty, idx) {
       let userIdx = this.balances.findIndex((b) => b.address == this.userAddress);
+      if (!this.walletLoaded) {
+        this.$toasted.error('Wallet not connected.', {
+          duration: 3000,
+        });
+        return;
+      }
       if (!this.balances[userIdx]) {
-        this.$toasted.error('Your balance is not enough to transfer tokens. Please mint some warps first.', {
+        this.$toasted.error('Please mint some tokens first.', {
           duration: 3000,
         });
         return;
@@ -158,7 +199,7 @@ export default {
       let oldBalance = this.balances[idx].balance;
 
       let oldBalanceUser = this.balances[userIdx].balance;
-      const bundled = await this.contract.connect('use_wallet').bundleInteraction({
+      const bundled = await this.contract.writeInteraction({
         function: 'transfer',
         target: address,
         qty: parseInt(qty),
@@ -195,11 +236,9 @@ export default {
     },
     async loadBalances() {
       const { data } = await axios.get(`${constants.den}/state?id=${deployedContracts.warp}`);
-      this.state = data;
-      const userAddress = await this.arweave.wallets.jwkToAddress();
-      this.userAddress = userAddress;
 
-      const arr = Object.keys(this.state.state.balances).map((key) => [key, this.state.state.balances[key]]);
+      this.state = data.state;
+      const arr = Object.keys(this.state.balances).map((key) => [key, this.state.balances[key]]);
       const find = arr.find((a) => a[0] == this.userAddress);
       if (find) {
         const user = arr.indexOf(find);
@@ -219,8 +258,16 @@ export default {
       this.loaded = true;
     },
     async mint() {
+      let userIdx = this.balances.findIndex((b) => b.address == this.userAddress);
+      if (this.balances[userIdx]) {
+        this.$toasted.error(`You've already minted tokens.`, {
+          duration: 3000,
+        });
+        return;
+      }
+
       this.$toasted.show('Processing...');
-      const bundled = await this.contract.connect('use_wallet').bundleInteraction({
+      const bundled = await this.contract.writeInteraction({
         function: 'mint',
       });
       const { data } = await axios.get(`${constants.den}/state?id=${deployedContracts.warp}`);

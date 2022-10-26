@@ -1,21 +1,15 @@
-import Vue from "vue";
-import Router from "vue-router";
-import Sequencer from "./views/Sequencer.vue";
-import Home from "./views/Home.vue";
+import Vue from 'vue';
+import Router from 'vue-router';
+import Sequencer from './views/Sequencer.vue';
 
 Vue.use(Router);
 
 const router = new Router({
   routes: [
     {
-      path: "/transfer",
-      name: "sequencer",
+      path: '/',
+      name: 'sequencer',
       component: Sequencer,
-    },
-    {
-      path: "/",
-      name: "home",
-      component: Home,
     },
   ],
 });
