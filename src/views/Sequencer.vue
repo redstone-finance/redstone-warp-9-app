@@ -35,10 +35,28 @@
           <b-button class="ml-3" variant="outline-primary" @click="mint">Mint</b-button>
           <img
             v-b-tooltip.hover
-            title="In order to perform correct transfer address need to own any tokens. You can mint up to 10000000 warps."
+            title="In order to perform correct transfer address need to own any tokens. You can mint up to 10000000 tokens."
             src="../assets/question-tooltip.svg"
             class="tooltip-icon"
           />
+        </div>
+      </div>
+      <div v-if="walletLoaded" class="d-flex flex-column flex-md-row justify-content-center col-12 mb-3">
+        <div class="d-flex align-self-center pt-3 pt-md-0">
+          <b-input-group>
+            <b-form-input
+              v-model="addressId"
+              placeholder="Address"
+              type="string"
+              class="mr-3"
+              style="width: 350px"
+            ></b-form-input>
+
+            <b-form-input v-model="transferValue" type="number" placeholder="Qty"></b-form-input>
+            <b-input-group-append>
+              <b-button class="ml-2 blue" @click="transfer(addressId, transferValue)">Transfer</b-button>
+            </b-input-group-append>
+          </b-input-group>
         </div>
       </div>
       <b-tabs content-class="mt-3" class="contract-tabs" :lazy="true">
@@ -79,6 +97,7 @@
                     :disabled="balance.address == userAddress"
                     type="number"
                     min="1"
+                    placeholder="Qty"
                   ></b-form-input>
                   <b-input-group-append>
                     <b-button class="ml-2 blue" @click="transfer(balance.address, balance.value, index)"
@@ -100,7 +119,6 @@
 </template>
 
 <script>
-
 import JsonViewer from 'vue-json-viewer';
 import deployedContracts from '../deployed-contracts.json';
 import constants from '../constants.json';
@@ -126,6 +144,8 @@ export default {
       color: '#5982f1',
       warp: null,
       walletLoaded: false,
+      addressId: '',
+      transferValue: null,
     };
   },
   components: { JsonViewer, PacmanLoader },
@@ -168,7 +188,24 @@ export default {
       await this.loadBalances();
     },
     async transfer(address, qty, idx) {
+      if (address == this.userAddress) {
+        this.$toasted.error('Cannot transfer tokens between same accounts.', {
+          duration: 3000,
+        });
+        return;
+      }
+      let transferIdx;
       let userIdx = this.balances.findIndex((b) => b.address == this.userAddress);
+      if (!idx) {
+        const addressIdx = this.balances.findIndex((b) => b.address == address);
+        if (addressIdx == -1) {
+          transferIdx = 1;
+        } else {
+          transferIdx = addressIdx;
+        }
+      } else {
+        transferIdx = idx;
+      }
       if (!this.walletLoaded) {
         this.$toasted.error('Wallet not connected.', {
           duration: 3000,
@@ -182,8 +219,8 @@ export default {
         return;
       }
       this.$toasted.show('Processing...');
-      let oldBalance = this.balances[idx].balance;
 
+      let oldBalance = this.balances[transferIdx].balance;
       let oldBalanceUser = this.balances[userIdx].balance;
       const bundled = await this.contract.writeInteraction({
         function: 'transfer',
@@ -200,7 +237,8 @@ export default {
           `<div>Interaction id: <a href="https://scanner.redstone.tools/#/app/interaction/${bundled.originalTxId}" target="_blank">${bundled.originalTxId}</a></div>`
         );
       }
-      Vue.set(this.balances, idx, {
+
+      Vue.set(this.balances, transferIdx, {
         address: address,
         balance: newResult.state.balances[address],
         text: null,
@@ -213,12 +251,15 @@ export default {
         text: null,
         error: null,
       });
+
       this.balances[userIdx].error = `-${oldBalanceUser - this.balances[userIdx].balance}`;
       setTimeout(() => {
         this.balances[userIdx].error = null;
       }, 2000);
-      this.balances[idx].text = `+${this.balances[idx].balance - oldBalance}`;
-      setTimeout(() => (this.balances[idx].text = null), 2000);
+      this.balances[transferIdx].text = `+${this.balances[transferIdx].balance - oldBalance}`;
+      setTimeout(() => (this.balances[transferIdx].text = null), 2000);
+      this.transferValue = null;
+      this.addressId = '';
     },
     async loadBalances() {
       const { data } = await axios.get(`${constants.den}/state?id=${deployedContracts.warp}`);
